@@ -1,0 +1,1515 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>像素宠物冒险 - Pixel Pet Adventure</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #1a1a2e;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: #fff;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 1000px;
+            height: 700px;
+            background: #16213e;
+            border: 4px solid #0f3460;
+            box-shadow: 0 0 20px rgba(15, 52, 96, 0.8);
+        }
+
+        canvas {
+            display: block;
+            background: #0a1628;
+        }
+
+        .screen-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        h1 {
+            font-size: 48px;
+            color: #4ecca3;
+            text-shadow: 4px 4px 0 #0f3460;
+            margin-bottom: 10px;
+            letter-spacing: 4px;
+        }
+
+        h2 {
+            font-size: 24px;
+            color: #4ecca3;
+            margin-bottom: 20px;
+        }
+
+        .subtitle {
+            color: #4ecca3;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+
+        input {
+            padding: 12px 20px;
+            font-size: 18px;
+            font-family: 'Courier New', monospace;
+            border: 3px solid #4ecca3;
+            background: #0f3460;
+            color: #fff;
+            margin: 10px;
+            width: 300px;
+        }
+
+        button {
+            padding: 12px 30px;
+            font-size: 18px;
+            font-family: 'Courier New', monospace;
+            background: #4ecca3;
+            color: #1a1a2e;
+            border: none;
+            cursor: pointer;
+            margin: 10px;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background: #3db892;
+        }
+
+        .egg-container {
+            display: flex;
+            gap: 30px;
+            margin: 30px 0;
+        }
+
+        .egg {
+            width: 100px;
+            height: 130px;
+            background: linear-gradient(135deg, #f5e6ca, #d4b896);
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: #8b6914;
+            font-weight: bold;
+            border: 3px solid #d4b896;
+        }
+
+        .egg:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 20px rgba(245, 230, 202, 0.6);
+        }
+
+        #statsPanel {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border: 2px solid #4ecca3;
+            min-width: 220px;
+            z-index: 10;
+        }
+
+        .stat-bar {
+            margin: 5px 0;
+            font-size: 12px;
+        }
+
+        .stat-label {
+            display: inline-block;
+            width: 60px;
+        }
+
+        .bar-bg {
+            display: inline-block;
+            width: 100px;
+            height: 12px;
+            background: #333;
+            vertical-align: middle;
+        }
+
+        .bar-fill {
+            height: 100%;
+            transition: width 0.3s;
+        }
+
+        #inventoryPanel {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border: 2px solid #4ecca3;
+            max-width: 300px;
+            z-index: 10;
+        }
+
+        .inventory-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 40px);
+            gap: 5px;
+            margin-top: 10px;
+        }
+
+        .inv-slot {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid #4ecca3;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .inv-slot.selected {
+            border-color: #ffd700;
+            background: rgba(255, 215, 0, 0.2);
+        }
+
+        #messageLog {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px;
+            border: 2px solid #4ecca3;
+            max-width: 400px;
+            max-height: 150px;
+            overflow-y: auto;
+            font-size: 12px;
+            z-index: 10;
+        }
+
+        .message {
+            margin: 3px 0;
+            padding: 3px;
+            border-bottom: 1px solid rgba(78, 204, 163, 0.3);
+        }
+
+        #rankingPanel {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95);
+            padding: 30px;
+            border: 3px solid #4ecca3;
+            min-width: 500px;
+            max-height: 80%;
+            overflow-y: auto;
+            z-index: 50;
+        }
+
+        .rank-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 1px solid rgba(78, 204, 163, 0.3);
+        }
+
+        .rank-1 { color: #ffd700; font-weight: bold; }
+        .rank-2 { color: #c0c0c0; font-weight: bold; }
+        .rank-3 { color: #cd7f32; font-weight: bold; }
+
+        .hint {
+            color: #aaa;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="1000" height="700"></canvas>
+        
+        <!-- 登录界面 -->
+        <div id="loginScreen" class="screen-overlay">
+            <h1>像素宠物冒险</h1>
+            <p class="subtitle">PIXEL PET ADVENTURE</p>
+            <input type="text" id="username" placeholder="用户名" />
+            <br>
+            <input type="password" id="password" placeholder="密码" />
+            <br>
+            <button onclick="game.register()">注册</button>
+            <button onclick="game.login()">登录</button>
+        </div>
+
+        <!-- 选蛋界面 -->
+        <div id="eggScreen" class="screen-overlay hidden">
+            <h2>选择你的宠物蛋 (3选1)</h2>
+            <p class="hint">每个蛋都有不同的宠物，稀有宠物概率极低！</p>
+            <div class="egg-container">
+                <div class="egg" onclick="game.hatchEgg(0)">宠物蛋 #1</div>
+                <div class="egg" onclick="game.hatchEgg(1)">宠物蛋 #2</div>
+                <div class="egg" onclick="game.hatchEgg(2)">宠物蛋 #3</div>
+            </div>
+            <p id="eggHint" class="hint"></p>
+        </div>
+
+        <!-- 游戏UI -->
+        <div id="statsPanel" class="hidden">
+            <h3 id="petName">宠物</h3>
+            <div class="stat-bar">
+                <span class="stat-label">等级:</span>
+                <span id="petLevel">1</span>
+            </div>
+            <div class="stat-bar">
+                <span class="stat-label">血量:</span>
+                <span class="bar-bg">
+                    <span class="bar-fill" id="hpBar" style="width:100%;background:#ff6b6b;"></span>
+                </span>
+                <span id="hpText">100/100</span>
+            </div>
+            <div class="stat-bar">
+                <span class="stat-label">体力:</span>
+                <span class="bar-bg">
+                    <span class="bar-fill" id="staminaBar" style="width:100%;background:#4ecca3;"></span>
+                </span>
+                <span id="staminaText">100/100</span>
+            </div>
+            <div class="stat-bar">
+                <span class="stat-label">饥饿:</span>
+                <span class="bar-bg">
+                    <span class="bar-fill" id="hungerBar" style="width:100%;background:#ffd93d;"></span>
+                </span>
+                <span id="hungerText">100/100</span>
+            </div>
+            <div class="stat-bar">
+                <span class="stat-label">魔法:</span>
+                <span class="bar-bg">
+                    <span class="bar-fill" id="manaBar" style="width:100%;background:#6c5ce7;"></span>
+                </span>
+                <span id="manaText">100/100</span>
+            </div>
+            <div class="stat-bar">
+                <span class="stat-label">经验:</span>
+                <span class="bar-bg">
+                    <span class="bar-fill" id="expBar" style="width:0%;background:#ff9ff3;"></span>
+                </span>
+                <span id="expText">0/100</span>
+            </div>
+            <div style="margin-top:10px;font-size:11px;color:#aaa;">
+                <div>攻击力: <span id="atkText">10</span></div>
+                <div>已解锁技能: <span id="skillCount">0</span></div>
+            </div>
+            <div style="margin-top:10px;">
+                <button onclick="game.showRanking()" style="font-size:12px;padding:5px 10px;">排行榜</button>
+                <button onclick="game.logout()" style="font-size:12px;padding:5px 10px;background:#ff6b6b;">退出</button>
+            </div>
+        </div>
+
+        <div id="inventoryPanel" class="hidden">
+            <h3>背包 (<span id="invCount">0</span>/<span id="invMax">10</span>)</h3>
+            <div class="inventory-grid" id="inventoryGrid"></div>
+            <div style="margin-top:10px;font-size:11px;">
+                <button onclick="game.useSelectedItem()" style="font-size:12px;padding:5px 10px;">使用选中</button>
+                <span id="selectedItem">未选择</span>
+            </div>
+        </div>
+
+        <div id="messageLog" class="hidden">
+            <div style="color:#4ecca3;font-weight:bold;margin-bottom:5px;">消息日志</div>
+        </div>
+
+        <!-- 排行榜 -->
+        <div id="rankingPanel" class="hidden">
+            <h2 style="text-align:center;margin-bottom:20px;">排行榜</h2>
+            <div id="rankingList"></div>
+            <button onclick="game.closeRanking()" style="margin-top:20px;width:100%;">关闭</button>
+        </div>
+    </div>
+
+    <script>
+        // ========== 游戏主类 ==========
+        class Game {
+            constructor() {
+                this.canvas = document.getElementById('gameCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.currentScreen = 'login';
+                this.currentPet = null;
+                this.account = null;
+                this.map = null;
+                this.camera = { x: 0, y: 0 };
+                this.tick = 0;
+                this.selectedInventoryItem = null;
+                this.particles = [];
+                this.currentFogGrids = [];  // 上一帧视野格子，用于迷雾更新
+                
+                this.init();
+            }
+
+            init() {
+                this.setupInput();
+                this.gameLoop();
+                setInterval(() => this.saveAccount(), 30000);
+            }
+
+            // ========== 账号系统 ==========
+            register() {
+                const username = document.getElementById('username').value.trim();
+                const password = document.getElementById('password').value;
+
+                if (!username || !password) {
+                    alert('请输入用户名和密码！');
+                    return;
+                }
+
+                const accounts = JSON.parse(localStorage.getItem('petGameAccounts') || '{}');
+
+                if (accounts[username]) {
+                    alert('用户名已存在！');
+                    return;
+                }
+
+                accounts[username] = {
+                    password: password,
+                    pets: [],
+                    currentPetId: null,
+                    treasureFound: false,
+                    treasureTime: null
+                };
+
+                localStorage.setItem('petGameAccounts', JSON.stringify(accounts));
+                alert('注册成功！请登录');
+            }
+
+            login() {
+                const username = document.getElementById('username').value.trim();
+                const password = document.getElementById('password').value;
+
+                const accounts = JSON.parse(localStorage.getItem('petGameAccounts') || '{}');
+                const account = accounts[username];
+
+                if (!account || account.password !== password) {
+                    alert('用户名或密码错误！');
+                    return;
+                }
+
+                this.account = { username, ...account };
+
+                if (this.account.pets.length === 0) {
+                    this.showScreen('egg');
+                } else {
+                    this.loadPet(this.account.currentPetId || this.account.pets[0].id);
+                    this.showScreen('game');
+                }
+            }
+
+            logout() {
+                this.saveAccount();
+                this.account = null;
+                this.currentPet = null;
+                this.map = null;
+                this.showScreen('login');
+            }
+
+            saveAccount() {
+                if (!this.account) return;
+
+                const accounts = JSON.parse(localStorage.getItem('petGameAccounts') || '{}');
+                accounts[this.account.username] = {
+                    password: this.account.password,
+                    pets: this.account.pets,
+                    currentPetId: this.account.currentPetId,
+                    treasureFound: this.account.treasureFound,
+                    treasureTime: this.account.treasureTime
+                };
+
+                localStorage.setItem('petGameAccounts', JSON.stringify(accounts));
+            }
+
+            showScreen(screen) {
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('eggScreen').classList.add('hidden');
+                document.getElementById('statsPanel').classList.add('hidden');
+                document.getElementById('inventoryPanel').classList.add('hidden');
+                document.getElementById('messageLog').classList.add('hidden');
+
+                if (screen === 'login') {
+                    document.getElementById('loginScreen').classList.remove('hidden');
+                } else if (screen === 'egg') {
+                    document.getElementById('eggScreen').classList.remove('hidden');
+                } else if (screen === 'game') {
+                    document.getElementById('statsPanel').classList.remove('hidden');
+                    document.getElementById('inventoryPanel').classList.remove('hidden');
+                    document.getElementById('messageLog').classList.remove('hidden');
+                }
+
+                this.currentScreen = screen;
+            }
+
+            // ========== 宠物蛋系统 ==========
+            hatchEgg(eggIndex) {
+                const petTypes = [
+                    { type: 'dog', name: '小狗', emoji: '🐕', rarity: '普通', attack: 12 },
+                    { type: 'cat', name: '小猫', emoji: '🐱', rarity: '普通', attack: 10 },
+                    { type: 'fox', name: '狐狸', emoji: '🦊', rarity: '优秀', attack: 11 },
+                    { type: 'panda', name: '熊猫', emoji: '🐼', rarity: '稀有', attack: 15 },
+                    { type: 'ninetail', name: '九尾狐', emoji: '🦊', rarity: '传说', attack: 20 }
+                ];
+
+                // 抽蛋概率
+                const rand = Math.random();
+                let petType;
+
+                if (rand < 0.60) {
+                    petType = Math.random() < 0.5 ? petTypes[0] : petTypes[1];
+                } else if (rand < 0.85) {
+                    petType = petTypes[2];
+                } else if (rand < 0.95) {
+                    petType = petTypes[3];
+                } else {
+                    petType = petTypes[4];
+                }
+
+                const pet = {
+                    id: Date.now().toString(),
+                    type: petType.type,
+                    name: petType.name,
+                    emoji: petType.emoji,
+                    rarity: petType.rarity,
+                    level: 1,
+                    exp: 0,
+                    expToLevel: 100,
+                    hp: 100,
+                    maxHp: 100,
+                    stamina: 100,
+                    maxStamina: 100,
+                    hunger: 100,
+                    maxHunger: 100,
+                    mana: 100,
+                    maxMana: 100,
+                    attack: petType.attack,
+                    skills: [],
+                    inventory: [],
+                    inventoryMax: 10,
+                    x: 10,
+                    y: 10,
+                    isHome: true,
+                    rebirths: 0
+                };
+
+                this.unlockSkills(pet);
+
+                this.account.pets.push(pet);
+                this.account.currentPetId = pet.id;
+                this.saveAccount();
+
+                document.getElementById('eggHint').textContent = 
+                    `你获得了 ${petType.name} (${petType.rarity})！`;
+
+                setTimeout(() => {
+                    this.loadPet(pet.id);
+                    this.showScreen('game');
+                }, 1500);
+            }
+
+            loadPet(petId) {
+                const pet = this.account.pets.find(p => p.id === petId);
+                if (!pet) return;
+
+                this.currentPet = pet;
+                this.account.currentPetId = petId;
+
+                if (!this.map) {
+                    this.map = new GameMap(50, 50);
+                    this.map.generate();
+                }
+
+                this.updateFogOfWar();  // 初始化迷雾
+                this.centerCamera();
+                this.updateUI();
+                this.updateInventoryUI();
+                this.addMessage(`欢迎回来，${pet.name}！`);
+                this.addMessage('提示：点击地图移动，点击敌人攻击，靠近道具自动拾取');
+            }
+
+            unlockSkills(pet) {
+                const skillUnlocks = [
+                    { level: 10, skill: { name: '暴击', desc: '攻击时有20%几率造成双倍伤害', type: 'crit', chance: 0.2, multiplier: 2 } },
+                    { level: 20, skill: { name: '治疗', desc: '被攻击时有15%几率回复10%血量', type: 'heal', chance: 0.15, amount: 0.1 } },
+                    { level: 30, skill: { name: '闪避', desc: '被攻击时有10%几率完全闪避', type: 'dodge', chance: 0.1 } },
+                    { level: 40, skill: { name: '吸血', desc: '攻击时回复造成伤害的20%血量', type: 'lifesteal', percent: 0.2 } },
+                    { level: 50, skill: { name: '狂暴', desc: '血量低于30%时攻击力提升50%', type: 'berserk', threshold: 0.3, multiplier: 1.5 } },
+                    { level: 60, skill: { name: '护盾', desc: '每10秒生成一个护盾', type: 'shield', amount: 0.1 } },
+                    { level: 70, skill: { name: '连击', desc: '攻击时有10%几率攻击两次', type: 'multistrike', chance: 0.1 } },
+                    { level: 80, skill: { name: '复活', desc: '死亡时有5%几率满血复活', type: 'revive', chance: 0.05 } },
+                    { level: 90, skill: { name: '毁灭', desc: '攻击时有5%几率造成5倍伤害', type: 'devastate', chance: 0.05, multiplier: 5 } },
+                    { level: 100, skill: { name: '传说', desc: '全属性提升30%', type: 'legendary', multiplier: 1.3 } }
+                ];
+
+                skillUnlocks.forEach(unlock => {
+                    if (pet.level >= unlock.level && !pet.skills.find(s => s.name === unlock.skill.name)) {
+                        pet.skills.push(unlock.skill);
+                        this.addMessage(`解锁新技能：${unlock.skill.name}！`);
+                    }
+                });
+            }
+
+            // ========== 地图系统 ==========
+            centerCamera() {
+                if (!this.currentPet) return;
+
+                const gridSize = 20;
+                this.camera.x = this.currentPet.x * gridSize - this.canvas.width / 2;
+                this.camera.y = this.currentPet.y * gridSize - this.canvas.height / 2;
+            }
+
+            // ========== 游戏循环 ==========
+            gameLoop() {
+                this.tick++;
+
+                if (this.currentScreen === 'game' && this.currentPet) {
+                    this.updatePet();
+                    this.updateEnemies();
+                    this.render();
+                    this.updateUI();
+                } else if (this.currentScreen === 'game') {
+                    this.render();
+                }
+
+                requestAnimationFrame(() => this.gameLoop());
+            }
+
+            // ========== 迷雾系统 ==========
+            updateFogOfWar() {
+                if (!this.map || !this.currentPet) return;
+
+                const pet = this.currentPet;
+
+                // 将上一帧的视野格子设为"已探索"（1）
+                this.currentFogGrids.forEach(grid => {
+                    if (grid.x >= 0 && grid.x < this.map.width &&
+                        grid.y >= 0 && grid.y < this.map.height) {
+                        this.map.fogOfWar[grid.y][grid.x] = 1;
+                    }
+                });
+
+                // 更新当前视野格子列表，并设为"当前视野"（2）
+                this.currentFogGrids = [];
+                for (let dy = -1; dy <= 1; dy++) {
+                    for (let dx = -1; dx <= 1; dx++) {
+                        const x = pet.x + dx;
+                        const y = pet.y + dy;
+
+                        if (x >= 0 && x < this.map.width && y >= 0 && y < this.map.height) {
+                            this.map.fogOfWar[y][x] = 2;
+                            this.currentFogGrids.push({x, y});
+                        }
+                    }
+                }
+            }
+
+            updatePet() {
+                const pet = this.currentPet;
+                if (!pet) return;
+
+                // 体力回复
+                if (pet.stamina < pet.maxStamina && !pet.isMoving) {
+                    pet.stamina = Math.min(pet.maxStamina, pet.stamina + 2 / 60);
+                }
+
+                // 饥饿度下降（每30秒掉1点）
+                if (this.tick % 1800 === 0) {
+                    pet.hunger = Math.max(0, pet.hunger - 2);
+                }
+
+                // 在家回复
+                if (this.isHome(pet.x, pet.y)) {
+                    pet.hp = Math.min(pet.maxHp, pet.hp + 0.5);
+                    pet.mana = Math.min(pet.maxMana, pet.mana + 0.5);
+                    pet.stamina = Math.min(pet.maxStamina, pet.stamina + 2);
+                    pet.hunger = Math.min(pet.maxHunger, pet.hunger + 0.5);
+                    pet.isHome = true;
+                } else {
+                    pet.isHome = false;
+                }
+
+                // 死亡检测
+                if (pet.hp <= 0 && !pet.dead) {
+                    pet.dead = true;
+                    this.addMessage(`${pet.name} 被击败了！3秒后返回基地...`);
+                    
+                    setTimeout(() => {
+                        pet.x = 10;
+                        pet.y = 10;
+                        pet.hp = Math.floor(pet.maxHp * 0.3);
+                        pet.dead = false;
+                        this.addMessage(`${pet.name} 已返回基地，正在恢复...`);
+                    }, 3000);
+                }
+
+                // 饥饿度过低掉血
+                if (pet.hunger <= 0) {
+                    pet.hp = Math.max(0, pet.hp - 0.1);
+                }
+
+                // 解锁技能检测
+                this.unlockSkills(pet);
+            }
+
+            updateEnemies() {
+                if (!this.map || !this.map.enemies) return;
+
+                this.map.enemies.forEach(enemy => {
+                    if (!enemy.isAlive) return;
+
+                    const dx = this.currentPet.x - enemy.x;
+                    const dy = this.currentPet.y - enemy.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    // 攻击范围
+                    if (distance <= 1.5) {
+                        enemy.attackCooldown--;
+                        if (enemy.attackCooldown <= 0) {
+                            this.enemyAttack(enemy);
+                            enemy.attackCooldown = enemy.attackSpeed;
+                        }
+                    }
+                });
+            }
+
+            enemyAttack(enemy) {
+                const pet = this.currentPet;
+                if (!pet || pet.isHome || pet.dead) return;
+
+                // 闪避检测
+                const dodgeSkill = pet.skills.find(s => s.type === 'dodge');
+                if (dodgeSkill && Math.random() < dodgeSkill.chance) {
+                    this.addMessage(`${pet.name} 闪避了攻击！`);
+                    return;
+                }
+
+                let damage = enemy.attack;
+
+                // 暴击检测（敌人）
+                if (Math.random() < 0.1) {
+                    damage *= 2;
+                    this.addMessage(`${enemy.name} 发动暴击！`);
+                }
+
+                pet.hp = Math.max(0, pet.hp - damage);
+                this.addMessage(`${enemy.name} 攻击了 ${pet.name}，造成 ${damage} 伤害！`);
+
+                // 治疗检测
+                const healSkill = pet.skills.find(s => s.type === 'heal');
+                if (healSkill && Math.random() < healSkill.chance) {
+                    const healAmount = Math.floor(pet.maxHp * healSkill.amount);
+                    pet.hp = Math.min(pet.maxHp, pet.hp + healAmount);
+                    this.addMessage(`${pet.name} 触发治疗，回复 ${healAmount} 血量！`);
+                }
+            }
+
+            // ========== 渲染系统 ==========
+            render() {
+                const ctx = this.ctx;
+                const canvas = this.canvas;
+
+                // 清空画布
+                ctx.fillStyle = '#0a1628';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                if (!this.map) return;
+
+                const gridSize = 20;
+                const startX = Math.floor(this.camera.x / gridSize);
+                const startY = Math.floor(this.camera.y / gridSize);
+                const endX = startX + Math.ceil(canvas.width / gridSize) + 1;
+                const endY = startY + Math.ceil(canvas.height / gridSize) + 1;
+
+                // 渲染地图
+                for (let y = Math.max(0, startY); y < Math.min(this.map.height, endY); y++) {
+                    for (let x = Math.max(0, startX); x < Math.min(this.map.width, endX); x++) {
+                        const screenX = x * gridSize - this.camera.x;
+                        const screenY = y * gridSize - this.camera.y;
+                        const tile = this.map.tiles[y][x];
+                        const fog = this.map.fogOfWar[y][x];
+
+                        // 未探索，显示为黑色
+                        if (fog === 0) {
+                            ctx.fillStyle = '#000';
+                            ctx.fillRect(screenX, screenY, gridSize, gridSize);
+                            continue;
+                        }
+
+                        // 根据迷雾状态选择颜色
+                        const isCurrentView = fog === 2;
+
+                        if (tile === 0) { // 障碍物
+                            ctx.fillStyle = isCurrentView ? '#2d3436' : '#1a1a1a';
+                            ctx.fillRect(screenX, screenY, gridSize, gridSize);
+                            if (isCurrentView) {
+                                ctx.fillStyle = '#636e72';
+                                ctx.fillRect(screenX + 2, screenY + 2, 4, 4);
+                            }
+                        } else if (tile === 1) { // 通路
+                            ctx.fillStyle = isCurrentView ? '#74b9ff' : '#3d5a80';
+                            ctx.fillRect(screenX, screenY, gridSize, gridSize);
+                            if (isCurrentView) {
+                                ctx.fillStyle = '#a8d8ff';
+                                ctx.fillRect(screenX + 1, screenY + 1, gridSize - 2, gridSize - 2);
+                            }
+                        } else if (tile === 2) { // 家
+                            ctx.fillStyle = isCurrentView ? '#00b894' : '#1a4731';
+                            ctx.fillRect(screenX, screenY, gridSize, gridSize);
+                            if (isCurrentView) {
+                                ctx.fillStyle = '#55efc4';
+                                ctx.fillRect(screenX + 2, screenY + 2, gridSize - 4, gridSize - 4);
+                                ctx.fillStyle = '#fff';
+                                ctx.font = '12px Courier New';
+                                ctx.textAlign = 'center';
+                                ctx.fillText('家', screenX + gridSize/2, screenY + gridSize/2 + 4);
+                            }
+                        } else if (tile === 3) { // 宝藏
+                            ctx.fillStyle = isCurrentView ? '#fdcb6' : '#7d6608';
+                            ctx.fillRect(screenX, screenY, gridSize, gridSize);
+                            if (isCurrentView) {
+                                ctx.fillStyle = '#ffd93d';
+                                ctx.fillRect(screenX + 2, screenY + 2, gridSize - 4, gridSize - 4);
+
+                                // 宝藏闪烁效果
+                                if (Math.sin(this.tick / 10) > 0) {
+                                    ctx.font = '14px Courier New';
+                                    ctx.textAlign = 'center';
+                                    ctx.fillText('💎', screenX + gridSize/2, screenY + gridSize/2 + 4);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // 渲染道具（只显示当前视野内的）
+                if (this.map.items) {
+                    this.map.items.forEach(item => {
+                        // 迷雾判断：只有当前视野(fog===2)才显示
+                        if (this.map.fogOfWar[item.y][item.x] !== 2) return;
+
+                        const screenX = item.x * gridSize - this.camera.x;
+                        const screenY = item.y * gridSize - this.camera.y;
+
+                        if (screenX < -gridSize || screenX > canvas.width ||
+                            screenY < -gridSize || screenY > canvas.height) return;
+
+                        ctx.font = '14px Courier New';
+                        ctx.textAlign = 'center';
+                        ctx.fillText(item.emoji, screenX + gridSize/2, screenY + gridSize/2 + 4);
+                    });
+                }
+
+                // 渲染敌人（只显示当前视野内的）
+                if (this.map.enemies) {
+                    this.map.enemies.forEach(enemy => {
+                        if (!enemy.isAlive) return;
+
+                        // 迷雾判断：只有当前视野(fog===2)才显示
+                        if (this.map.fogOfWar[enemy.y][enemy.x] !== 2) return;
+
+                        const screenX = enemy.x * gridSize - this.camera.x;
+                        const screenY = enemy.y * gridSize - this.camera.y;
+
+                        if (screenX < -gridSize || screenX > canvas.width || 
+                            screenY < -gridSize || screenY > canvas.height) return;
+
+                        ctx.fillStyle = enemy.color;
+                        ctx.fillRect(screenX + 2, screenY + 2, gridSize - 4, gridSize - 4);
+
+                        ctx.font = '12px Courier New';
+                        ctx.textAlign = 'center';
+                        ctx.fillText(enemy.emoji, screenX + gridSize/2, screenY + gridSize/2 + 4);
+
+                        // 血量条
+                        ctx.fillStyle = '#333';
+                        ctx.fillRect(screenX, screenY - 5, gridSize, 3);
+                        ctx.fillStyle = '#ff6b6b';
+                        ctx.fillRect(screenX, screenY - 5, gridSize * (enemy.hp / enemy.maxHp), 3);
+                    });
+                }
+
+                // 渲染宠物
+                if (this.currentPet) {
+                    const pet = this.currentPet;
+                    const screenX = pet.x * gridSize - this.camera.x;
+                    const screenY = pet.y * gridSize - this.camera.y;
+
+                    ctx.fillStyle = this.getPetColor(pet.type);
+                    ctx.fillRect(screenX + 2, screenY + 2, gridSize - 4, gridSize - 4);
+
+                    ctx.font = '14px Courier New';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(pet.emoji, screenX + gridSize/2, screenY + gridSize/2 + 4);
+
+                    // 宠物名字
+                    ctx.fillStyle = '#fff';
+                    ctx.font = '10px Courier New';
+                    ctx.fillText(pet.name, screenX + gridSize/2, screenY - 5);
+
+                    // 宠物血量条
+                    ctx.fillStyle = '#333';
+                    ctx.fillRect(screenX, screenY - 8, gridSize, 3);
+                    ctx.fillStyle = pet.hp / pet.maxHp > 0.3 ? '#4ecca3' : '#ff6b6b';
+                    ctx.fillRect(screenX, screenY - 8, gridSize * (pet.hp / pet.maxHp), 3);
+                }
+            }
+
+            getPetColor(type) {
+                const colors = {
+                    'dog': '#8B4513',
+                    'cat': '#FF6B6B',
+                    'fox': '#FF8C00',
+                    'panda': '#000000',
+                    'ninetail': '#9B30FF'
+                };
+                return colors[type] || '#fff';
+            }
+
+            // ========== 输入处理 ==========
+            setupInput() {
+                this.canvas.addEventListener('click', (e) => {
+                    if (this.currentScreen !== 'game' || !this.currentPet) return;
+
+                    const rect = this.canvas.getBoundingClientRect();
+                    const clickX = e.clientX - rect.left + this.camera.x;
+                    const clickY = e.clientY - rect.top + this.camera.y;
+
+                    const gridX = Math.floor(clickX / 20);
+                    const gridY = Math.floor(clickY / 20);
+
+                    this.handleMapClick(gridX, gridY);
+                });
+            }
+
+            handleMapClick(gridX, gridY) {
+                const pet = this.currentPet;
+                if (!pet) return;
+
+                // 检查是否点击了敌人
+                const enemy = this.map.enemies.find(e => e.x === gridX && e.y === gridY && e.isAlive);
+                if (enemy) {
+                    this.attackEnemy(enemy);
+                    return;
+                }
+
+                // 检查是否点击了道具
+                const itemIndex = this.map.items.findIndex(i => i.x === gridX && i.y === gridY);
+                if (itemIndex !== -1) {
+                    this.pickupItem(itemIndex);
+                    return;
+                }
+
+                // 移动宠物
+                this.moveTo(gridX, gridY);
+            }
+
+            moveTo(targetX, targetY) {
+                const pet = this.currentPet;
+                if (!pet || pet.dead) return;
+
+                // 简单的寻路（逐格移动）
+                const moveInterval = setInterval(() => {
+                    if (pet.dead) {
+                        clearInterval(moveInterval);
+                        return;
+                    }
+
+                    const dx = targetX - pet.x;
+                    const dy = targetY - pet.y;
+
+                    if (dx === 0 && dy === 0) {
+                        clearInterval(moveInterval);
+                        return;
+                    }
+
+                    let nextX = pet.x;
+                    let nextY = pet.y;
+
+                    if (Math.abs(dx) > Math.abs(dy)) {
+                        nextX += dx > 0 ? 1 : -1;
+                    } else {
+                        nextY += dy > 0 ? 1 : -1;
+                    }
+
+                    this.tryMovePet(nextX, nextY);
+
+                    if (nextX === targetX && nextY === targetY) {
+                        clearInterval(moveInterval);
+                    }
+                }, 200);
+            }
+
+            tryMovePet(newX, newY) {
+                const pet = this.currentPet;
+                if (!pet) return;
+
+                // 检查体力
+                if (pet.stamina <= 0) {
+                    this.addMessage(`${pet.name} 体力不足，无法移动！`);
+                    return;
+                }
+
+                // 检查地图边界
+                if (newX < 0 || newX >= this.map.width || newY < 0 || newY >= this.map.height) {
+                    return;
+                }
+
+                // 检查障碍物
+                if (this.map.tiles[newY][newX] === 0) {
+                    this.addMessage(`前方有障碍物！`);
+                    return;
+                }
+
+                // 移动宠物
+                pet.x = newX;
+                pet.y = newY;
+                pet.stamina = Math.max(0, pet.stamina - 1);
+                pet.hunger = Math.max(0, pet.hunger - 0.1);
+
+                // 更新迷雾
+                this.updateFogOfWar();
+
+                // 检查是否找到宝藏
+                if (this.map.tiles[newY][newX] === 3 && !this.account.treasureFound) {
+                    this.findTreasure();
+                }
+
+                // 拾取地上的道具
+                const itemIndex = this.map.items.findIndex(i => i.x === newX && i.y === newY);
+                if (itemIndex !== -1) {
+                    this.pickupItem(itemIndex);
+                }
+
+                // 更新相机位置
+                this.centerCamera();
+
+                // 拾取能量球
+                this.checkEnergyBall(newX, newY);
+            }
+
+            attackEnemy(enemy) {
+                const pet = this.currentPet;
+                if (!pet || !enemy.isAlive || pet.dead) return;
+
+                // 检查距离
+                const dx = Math.abs(pet.x - enemy.x);
+                const dy = Math.abs(pet.y - enemy.y);
+                if (dx > 1 || dy > 1) {
+                    this.addMessage(`敌人太远了，先靠近它！`);
+                    return;
+                }
+
+                // 计算伤害
+                let damage = pet.attack;
+
+                // 狂暴检测
+                const berserkSkill = pet.skills.find(s => s.type === 'berserk');
+                if (berserkSkill && pet.hp / pet.maxHp < berserkSkill.threshold) {
+                    damage *= berserkSkill.multiplier;
+                    this.addMessage(`${pet.name} 进入狂暴状态！`);
+                }
+
+                // 暴击检测
+                const critSkill = pet.skills.find(s => s.type === 'crit');
+                if (critSkill && Math.random() < critSkill.chance) {
+                    damage *= critSkill.multiplier;
+                    this.addMessage(`${pet.name} 发动暴击！`);
+                }
+
+                // 造成成伤害
+                enemy.hp -= damage;
+                this.addMessage(`${pet.name} 攻击了 ${enemy.name}，造成 ${damage} 伤害！`);
+
+                // 吸血检测
+                const lifestealSkill = pet.skills.find(s => s.type === 'lifesteal');
+                if (lifestealSkill) {
+                    const healAmount = Math.floor(damage * lifestealSkill.percent);
+                    pet.hp = Math.min(pet.maxHp, pet.hp + healAmount);
+                    this.addMessage(`${pet.name} 吸取了 ${healAmount} 生命！`);
+                }
+
+                // 检查敌人死亡
+                if (enemy.hp <= 0) {
+                    enemy.isAlive = false;
+                    this.addMessage(`${enemy.name} 被击败了！`);
+                    this.dropLoot(enemy);
+                    this.gainExp(enemy.expReward);
+                }
+            }
+
+            pickupItem(itemIndex) {
+                const pet = this.currentPet;
+                if (!pet) return;
+
+                const item = this.map.items[itemIndex];
+
+                // 检查背包空间
+                if (pet.inventory.length >= pet.inventoryMax) {
+                    this.addMessage(`背包已满！`);
+                    return;
+                }
+
+                // 拾取道具
+                pet.inventory.push(item);
+                this.map.items.splice(itemIndex, 1);
+                this.addMessage(`拾取了 ${item.name}！`);
+                this.updateInventoryUI();
+            }
+
+            dropLoot(enemy) {
+                const lootTable = [
+                    { name: '小血瓶', emoji: '🧃', type: 'heal', value: 30, chance: 0.5 },
+                    { name: '面包', emoji: '🍞', type: 'food', value: 20, chance: 0.4 },
+                    { name: '能量球(低)', emoji: '⚡', type: 'exp', value: 20, chance: 0.3 },
+                    { name: '能量球(中)', emoji: '⚡', type: 'exp', value: 50, chance: 0.1 },
+                    { name: '魔法药水', emoji: '🧪', type: 'mana', value: 30, chance: 0.2 }
+                ];
+
+                lootTable.forEach(loot => {
+                    if (Math.random() < loot.chance) {
+                        this.map.items.push({
+                            x: enemy.x,
+                            y: enemy.y,
+                            ...loot
+                        });
+                        this.addMessage(`${enemy.name} 掉落了 ${loot.name}！`);
+                    }
+                });
+            }
+
+            checkEnergyBall(x, y) {
+                // 能量球已被拾取系统处理
+            }
+
+            gainExp(amount) {
+                const pet = this.currentPet;
+                if (!pet) return;
+
+                pet.exp += amount;
+                this.addMessage(`获得 ${amount} 经验值！`);
+
+                // 检查升级
+                while (pet.exp >= pet.expToLevel) {
+                    this.levelUp();
+                }
+            }
+
+            levelUp() {
+                const pet = this.currentPet;
+                if (!pet) return;
+
+                pet.level++;
+                pet.exp -= pet.expToLevel;
+                pet.expToLevel = Math.floor(pet.expToLevel * 1.2);
+
+                // 属性提升
+                pet.maxHp += 1;
+                pet.hp = pet.maxHp;
+                pet.maxStamina += 1;
+                pet.stamina = pet.maxStamina;
+                pet.maxHunger += 1;
+                pet.hunger = pet.maxHunger;
+                pet.maxMana += 1;
+                pet.mana = pet.maxMana;
+                pet.attack += 1;
+
+                // 背包扩容
+                pet.inventoryMax += 1;
+
+                this.addMessage(`${pet.name} 升到了 ${pet.level} 级！`);
+
+                // 检查转生
+                if (pet.level > 100) {
+                    this.rebirth();
+                }
+            }
+
+            rebirth() {
+                const pet = this.currentPet;
+                if (!pet) return;
+
+                pet.rebirths++;
+                pet.level = 1;
+                pet.exp = 0;
+                pet.expToLevel = 100;
+                pet.attack = Math.floor(pet.attack * 1.5);
+                pet.maxHp = Math.floor(pet.maxHp * 1.3);
+                pet.maxStamina = Math.floor(pet.maxStamina * 1.2);
+                pet.maxMana = Math.floor(pet.maxMana * 1.2);
+
+                this.addMessage(`${pet.name} 转生成功！全属性大幅提升！`);
+            }
+
+            findTreasure() {
+                this.account.treasureFound = true;
+                this.account.treasureTime = Date.now();
+
+                this.saveRanking();
+
+                this.addMessage(`恭喜！你找到了最终宝藏！`);
+                alert(`恭喜！你找到了最终宝藏！\n你的${this.currentPet.name}完成了冒险！`);
+            }
+
+            saveRanking() {
+                const rankings = JSON.parse(localStorage.getItem('petGameRankings') || '[]');
+                rankings.push({
+                    username: this.account.username,
+                    petName: this.currentPet.name,
+                    petLevel: this.currentPet.level,
+                    time: Date.now(),
+                    date: new Date().toLocaleString()
+                });
+                rankings.sort((a, b) => a.time - b.time);
+                localStorage.setItem('petGameRankings', JSON.stringify(rankings.slice(0, 100)));
+            }
+
+            showRanking() {
+                const rankings = JSON.parse(localStorage.getItem('petGameRankings') || '[]');
+                const rankingList = document.getElementById('rankingList');
+                rankingList.innerHTML = '';
+
+                if (rankings.length === 0) {
+                    rankingList.innerHTML = '<div style="text-align:center;color:#aaa;padding:20px;">暂无排行数据</div>';
+                } else {
+                    rankings.slice(0, 50).forEach((entry, index) => {
+                        const rankItem = document.createElement('div');
+                        rankItem.className = `rank-item ${index < 3 ? 'rank-' + (index + 1) : ''}`;
+                        rankItem.innerHTML = `
+                            <span>#${index + 1} ${entry.username}</span>
+                            <span>${entry.petName} (Lv.${entry.petLevel})</span>
+                            <span style="font-size:11px;color:#aaa;">${entry.date}</span>
+                        `;
+                        rankingList.appendChild(rankItem);
+                    });
+                }
+
+                document.getElementById('rankingPanel').classList.remove('hidden');
+            }
+
+            closeRanking() {
+                document.getElementById('rankingPanel').classList.add('hidden');
+            }
+
+            // ========== UI更新 ==========
+            updateUI() {
+                if (!this.currentPet) return;
+
+                const pet = this.currentPet;
+
+                document.getElementById('petName').textContent = `${pet.emoji} ${pet.name} (${pet.rarity})`;
+                document.getElementById('petLevel').textContent = pet.level;
+
+                document.getElementById('hpBar').style.width = `${(pet.hp / pet.maxHp) * 100}%`;
+                document.getElementById('hpText').textContent = `${Math.floor(pet.hp)}/${pet.maxHp}`;
+
+                document.getElementById('staminaBar').style.width = `${(pet.stamina / pet.maxStamina) * 100}%`;
+                document.getElementById('staminaText').textContent = `${Math.floor(pet.stamina)}/${pet.maxStamina}`;
+
+                document.getElementById('hungerBar').style.width = `${(pet.hunger / pet.maxHunger) * 100}%`;
+                document.getElementById('hungerText').textContent = `${Math.floor(pet.hunger)}/${pet.maxHunger}`;
+
+                document.getElementById('manaBar').style.width = `${(pet.mana / pet.maxMana) * 100}%`;
+                document.getElementById('manaText').textContent = `${Math.floor(pet.mana)}/${pet.maxMana}`;
+
+                document.getElementById('expBar').style.width = `${(pet.exp / pet.expToLevel) * 100}%`;
+                document.getElementById('expText').textContent = `${pet.exp}/${pet.expToLevel}`;
+
+                document.getElementById('atkText').textContent = pet.attack;
+                document.getElementById('skillCount').textContent = pet.skills.length;
+
+                document.getElementById('invCount').textContent = pet.inventory.length;
+                document.getElementById('invMax').textContent = pet.inventoryMax;
+            }
+
+            updateInventoryUI() {
+                const pet = this.currentPet;
+                if (!pet) return;
+
+                const grid = document.getElementById('inventoryGrid');
+                grid.innerHTML = '';
+
+                pet.inventory.forEach((item, index) => {
+                    const slot = document.createElement('div');
+                    slot.className = 'inv-slot';
+                    if (this.selectedInventoryItem === index) {
+                        slot.classList.add('selected');
+                    }
+                    slot.textContent = item.emoji;
+                    slot.title = item.name;
+                    slot.onclick = () => {
+                        this.selectedInventoryItem = index;
+                        document.getElementById('selectedItem').textContent = `${item.name} (点击使用)`;
+                        this.updateInventoryUI();
+                    };
+                    grid.appendChild(slot);
+                });
+
+                // 空槽位
+                for (let i = pet.inventory.length; i < pet.inventoryMax; i++) {
+                    const slot = document.createElement('div');
+                    slot.className = 'inv-slot';
+                    grid.appendChild(slot);
+                }
+            }
+
+            useSelectedItem() {
+                if (this.selectedInventoryItem === null) {
+                    this.addMessage(`请先选择要使用的道具！`);
+                    return;
+                }
+
+                const pet = this.currentPet;
+                const item = pet.inventory[this.selectedInventoryItem];
+
+                if (item.type === 'heal') {
+                    pet.hp = Math.min(pet.maxHp, pet.hp + item.value);
+                    this.addMessage(`使用了 ${item.name}，回复 ${item.value} 血量！`);
+                } else if (item.type === 'food') {
+                    pet.hunger = Math.min(pet.maxHunger, pet.hunger + item.value);
+                    this.addMessage(`使用了 ${item.name}，回复 ${item.value} 饥饿度！`);
+                } else if (item.type === 'mana') {
+                    pet.mana = Math.min(pet.maxMana, pet.mana + item.value);
+                    this.addMessage(`使用了 ${item.name}，回复 ${item.value} 魔法值！`);
+                } else if (item.type === 'exp') {
+                    this.gainExp(item.value);
+                    this.addMessage(`使用了 ${item.name}，获得 ${item.value} 经验！`);
+                }
+
+                pet.inventory.splice(this.selectedInventoryItem, 1);
+                this.selectedInventoryItem = null;
+                document.getElementById('selectedItem').textContent = '未选择';
+                this.updateInventoryUI();
+                this.updateUI();
+            }
+
+            addMessage(text) {
+                const log = document.getElementById('messageLog');
+                const msg = document.createElement('div');
+                msg.className = 'message';
+                msg.textContent = text;
+                log.appendChild(msg);
+
+                while (log.children.length > 10) {
+                    log.removeChild(log.firstChild);
+                }
+
+                log.scrollTop = log.scrollHeight;
+            }
+
+            isHome(x, y) {
+                return this.map && this.map.tiles[y] && this.map.tiles[y][x] === 2;
+            }
+        }
+
+        // ========== 地图生成类 ==========
+        class GameMap {
+            constructor(width, height) {
+                this.width = width;
+                this.height = height;
+                this.tiles = [];
+                this.fogOfWar = [];  // 0=未探索 1=已探索 2=当前视野
+                this.enemies = [];
+                this.items = [];
+            }
+
+            generate() {
+                // 初始化地图（全障碍物）和迷雾（全黑）
+                for (let y = 0; y < this.height; y++) {
+                    this.tiles[y] = [];
+                    this.fogOfWar[y] = [];
+                    for (let x = 0; x < this.width; x++) {
+                        this.tiles[y][x] = 0;
+                        this.fogOfWar[y][x] = 0;  // 0=未探索(黑)
+                    }
+                }
+
+                // 生成路径
+                this.generatePaths();
+
+                // 放置家
+                this.placeHome();
+
+                // 放置宝藏
+                this.placeTreasure();
+
+                // 放置敌人
+                this.placeEnemies();
+
+                // 放置道具
+                this.placeItems();
+            }
+
+            generatePaths() {
+                // 从家开始生成路径
+                const startX = 10;
+                const startY = 10;
+
+                this.tiles[startY][startX] = 1;
+
+                // 随机游走
+                const directions = [[0, 1], [0, -1], [1, 0], [-1, 0]];
+                let currentX = startX;
+                let currentY = startY;
+
+                for (let i = 0; i < 800; i++) {
+                    const dir = directions[Math.floor(Math.random() * directions.length)];
+                    const nextX = currentX + dir[0];
+                    const nextY = currentY + dir[1];
+
+                    if (nextX >= 0 && nextX < this.width && nextY >= 0 && nextY < this.height) {
+                        this.tiles[nextY][nextX] = 1;
+                        currentX = nextX;
+                        currentY = nextY;
+                    }
+                }
+            }
+
+            placeHome() {
+                this.tiles[10][10] = 2;
+                this.tiles[10][11] = 2;
+                this.tiles[11][10] = 2;
+                this.tiles[11][11] = 2;
+            }
+
+            placeTreasure() {
+                let tx, ty;
+                do {
+                    tx = Math.floor(Math.random() * (this.width - 20)) + 15;
+                    ty = Math.floor(Math.random() * (this.height - 20)) + 15;
+                } while (this.tiles[ty][tx] !== 1);
+
+                this.tiles[ty][tx] = 3;
+                this.treasurePos = { x: tx, y: ty };
+            }
+
+            placeEnemies() {
+                for (let i = 0; i < 25; i++) {
+                    this.placeEnemy({
+                        name: '小恶魔',
+                        emoji: '👹',
+                        type: 'normal',
+                        hp: 50,
+                        attack: 5,
+                        attackSpeed: 60,
+                        color: '#ff6b6b',
+                        expReward: 20
+                    });
+                }
+
+                for (let i = 0; i < 6; i++) {
+                    this.placeEnemy({
+                        name: '精英恶魔',
+                        emoji: '👿',
+                        type: 'elite',
+                        hp: 120,
+                        attack: 15,
+                        attackSpeed: 40,
+                        color: '#e17055',
+                        expReward: 50
+                    });
+                }
+
+                this.placeEnemy({
+                    name: '魔王',
+                    emoji: '😈',
+                    type: 'boss',
+                    hp: 500,
+                    attack: 30,
+                    attackSpeed: 30,
+                    color: '#d63031',
+                    expReward: 200
+                });
+            }
+
+            placeEnemy(enemyType) {
+                let x, y, attempts = 0;
+
+                do {
+                    x = Math.floor(Math.random() * (this.width - 2)) + 1;
+                    y = Math.floor(Math.random() * (this.height - 2)) + 1;
+                    attempts++;
+                } while ((this.tiles[y][x] !== 1 || (x === 10 && y === 10)) &&
+                         attempts < 100);
+
+                if (attempts < 100) {
+                    this.enemies.push({
+                        ...enemyType,
+                        x, y,
+                        maxHp: enemyType.hp,
+                        isAlive: true,
+                        attackCooldown: enemyType.attackSpeed
+                    });
+                }
+            }
+
+            placeItems() {
+                for (let i = 0; i < 30; i++) {
+                    this.placeItem({ name: '面包', emoji: '🍞', type: 'food', value: 20 });
+                }
+
+                for (let i = 0; i < 50; i++) {
+                    const isHigh = Math.random() < 0.2;
+                    this.placeItem({
+                        name: isHigh ? '能量球(高)' : '能量球(低)',
+                        emoji: '⚡',
+                        type: 'exp',
+                        value: isHigh ? 100 : 30
+                    });
+                }
+
+                for (let i = 0; i < 20; i++) {
+                    this.placeItem({ name: '小血瓶', emoji: '🧃', type: 'heal', value: 30 });
+                }
+            }
+
+            placeItem(item) {
+                let x, y, attempts = 0;
+
+                do {
+                    x = Math.floor(Math.random() * (this.width - 2)) + 1;
+                    y = Math.floor(Math.random() * (this.height - 2)) + 1;
+                    attempts++;
+                } while (this.tiles[y][x] !== 1 && attempts < 100);
+
+                if (attempts < 100) {
+                    this.items.push({ ...item, x, y });
+                }
+            }
+        }
+
+        // ========== 启动游戏 ==========
+        let game;
+
+        window.onload = () => {
+            game = new Game();
+            window.game = game;
+        };
+    </script>
+</body>
+</html>
